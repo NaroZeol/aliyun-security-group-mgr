@@ -70,7 +70,7 @@ func (e *Clerk) GetIpRules(cidrIp string) ([]SecurityGroupRule, error) {
 
 	var filteredRules []SecurityGroupRule
 	for _, rule := range rules {
-		if rule.CidrIp != nil && *rule.CidrIp == cidrIp {
+		if rule.CidrIp == cidrIp {
 			filteredRules = append(filteredRules, rule)
 		}
 	}
@@ -95,10 +95,10 @@ func (e *Clerk) addIngressSecurityGroupRule(rule SecurityGroupRule) error {
 		RegionId:        e.config.ECS.RegionId,
 		SecurityGroupId: e.config.SecurityGroup.Id,
 
-		IpProtocol:   rule.IpProtocol,
-		PortRange:    rule.PortRange,
-		SourceCidrIp: rule.CidrIp,
-		Description:  rule.Description,
+		IpProtocol:   &rule.IpProtocol,
+		PortRange:    &rule.PortRange,
+		SourceCidrIp: &rule.CidrIp,
+		Description:  &rule.Description,
 		Priority:     tea.String("1"),
 	}
 	runtime := &util.RuntimeOptions{}
@@ -114,10 +114,10 @@ func (e *Clerk) addEgressSecurityGroupRule(rule SecurityGroupRule) error {
 		RegionId:        e.config.ECS.RegionId,
 		SecurityGroupId: e.config.SecurityGroup.Id,
 
-		IpProtocol:  rule.IpProtocol,
-		PortRange:   rule.PortRange,
-		DestCidrIp:  rule.CidrIp,
-		Description: rule.Description,
+		IpProtocol:  &rule.IpProtocol,
+		PortRange:   &rule.PortRange,
+		DestCidrIp:  &rule.CidrIp,
+		Description: &rule.Description,
 		Priority:    tea.String("1"),
 	}
 
@@ -146,7 +146,7 @@ func (e *Clerk) removeIngressSecurityGroupRule(rule SecurityGroupRule) error {
 		RegionId:        e.config.ECS.RegionId,
 		SecurityGroupId: e.config.SecurityGroup.Id,
 
-		SecurityGroupRuleId: []*string{tea.String(*rule.Id)},
+		SecurityGroupRuleId: []*string{tea.String(rule.Id)},
 	}
 	runtime := &util.RuntimeOptions{}
 	_, err := e.ecsClient.RevokeSecurityGroupWithOptions(revokeSecurityGroupRequest, runtime)
@@ -161,7 +161,7 @@ func (e *Clerk) removeEgressSecurityGroupRule(rule SecurityGroupRule) error {
 		RegionId:        e.config.ECS.RegionId,
 		SecurityGroupId: e.config.SecurityGroup.Id,
 
-		SecurityGroupRuleId: []*string{tea.String(*rule.Id)},
+		SecurityGroupRuleId: []*string{tea.String(rule.Id)},
 	}
 
 	runtime := &util.RuntimeOptions{}
@@ -190,10 +190,10 @@ func (e *Clerk) modifyIngressSecurityRule(ruleId string, newRule SecurityGroupRu
 		SecurityGroupId: e.config.SecurityGroup.Id,
 
 		SecurityGroupRuleId: tea.String(ruleId),
-		IpProtocol:          newRule.IpProtocol,
-		PortRange:           newRule.PortRange,
-		Description:         newRule.Description,
-		Priority:            newRule.Priority,
+		IpProtocol:          &newRule.IpProtocol,
+		PortRange:           &newRule.PortRange,
+		Description:         &newRule.Description,
+		Priority:            &newRule.Priority,
 	}
 
 	runtime := &util.RuntimeOptions{}
@@ -211,10 +211,10 @@ func (e *Clerk) modifyEgressSecurityRule(ruleId string, newRule SecurityGroupRul
 		SecurityGroupId: e.config.SecurityGroup.Id,
 
 		SecurityGroupRuleId: tea.String(ruleId),
-		IpProtocol:          newRule.IpProtocol,
-		PortRange:           newRule.PortRange,
-		Description:         newRule.Description,
-		Priority:            newRule.Priority,
+		IpProtocol:          &newRule.IpProtocol,
+		PortRange:           &newRule.PortRange,
+		Description:         &newRule.Description,
+		Priority:            &newRule.Priority,
 	}
 
 	runtime := &util.RuntimeOptions{}
