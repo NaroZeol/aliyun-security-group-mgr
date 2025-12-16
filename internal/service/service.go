@@ -11,14 +11,14 @@ type Service struct {
 }
 
 func NewService(config *conf.GlobalConfiguration) (*Service, error) {
-	ecsClient, err := ecs.NewEcsClient(config)
+	ecsClerk, err := ecs.NewClerk(config)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Service{
 		Config: config,
-		Ecs:    ecsClient,
+		Ecs:    ecsClerk,
 	}, nil
 }
 
