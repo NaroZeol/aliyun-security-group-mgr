@@ -2,7 +2,8 @@ package reloader
 
 import (
 	"aliyun-security-group-mgr/internal/ecs"
-
+	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -72,6 +73,7 @@ func TestDecodeEntry(t *testing.T) {
 			entry.SecurityGroup.PortRange != test.entry.SecurityGroup.PortRange ||
 			entry.SecurityGroup.CidrIp != test.entry.SecurityGroup.CidrIp ||
 			entry.SecurityGroup.Priority != test.entry.SecurityGroup.Priority ||
+			// !entry.ExpireAt.Equal(test.entry.ExpireAt) || // Timezones might be tricky, checking string rep if fails
 			!entry.ExpireAt.Equal(test.entry.ExpireAt) ||
 			entry.SecurityGroup.Description != test.entry.SecurityGroup.Description {
 			t.Errorf("DecodeEntry(%q) = %+v; want %+v", test.line, entry, test.entry)
@@ -85,5 +87,67 @@ func TestEncodeEntry(t *testing.T) {
 		if line != test.line {
 			t.Errorf("EncodeEntry(%+v) = %q; want %q", test.entry, line, test.line)
 		}
+	}
+}
+
+func TestReadEntriesFromFile(t *testing.T) {
+	// Create temp file
+	tmpfile, err := os.CreateTemp("", "entries")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	// Write content
+	var content strings.Builder
+	for _, test := range testGroup {
+		content.WriteString(test.line + "\n")
+	}
+	if _, err := tmpfile.Write([]byte(content.String())); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Read
+	entries, err := ReadEntriesFromFile(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("ReadEntriesFromFile() error = %v", err)
+	}
+
+	if len(entries) != len(testGroup) {
+		t.Errorf("ReadEntriesFromFile() returned %d entries, want %d", len(entries), len(testGroup))
+	}
+}
+
+func TestEntry_EqualContent(t *testing.T) {
+	e1 := Entry{
+		SecurityGroup: ecs.SecurityGroupRule{
+			Policy: "Accept",
+			CidrIp: "0.0.0.0/0",
+		},
+		ExpireAt: time.Now(),
+	}
+	e2 := Entry{
+		SecurityGroup: ecs.SecurityGroupRule{
+			Policy: "Accept",
+			CidrIp: "0.0.0.0/0",
+		},
+		ExpireAt: time.Now().Add(1 * time.Hour), // Different time
+	}
+	e3 := Entry{
+		SecurityGroup: ecs.SecurityGroupRule{
+			Policy: "Drop",
+			CidrIp: "0.0.0.0/0",
+		},
+		ExpireAt: time.Now(),
+	}
+
+	if !e1.EqualContent(e2) {
+		t.Error("e1 should be equal content to e2 (ignoring time)")
+	}
+	if e1.EqualContent(e3) {
+		t.Error("e1 should not be equal content to e3")
 	}
 }
