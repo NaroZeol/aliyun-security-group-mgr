@@ -79,15 +79,14 @@ func (e *Clerk) GetIpRules(cidrIp string) ([]SecurityGroupRule, error) {
 }
 
 func (e *Clerk) AddSecurityGroupRule(rule SecurityGroupRule) error {
-	if rule.Policy != PolicyAccept {
+	switch rule.Direction {
+	case DirectionIngress:
 		return e.addIngressSecurityGroupRule(rule)
-	}
-
-	if rule.Policy == PolicyAccept {
+	case DirectionEgress:
 		return e.addEgressSecurityGroupRule(rule)
+	default:
+		return fmt.Errorf("unsupported direction: %s for rule: %v", rule.Direction, rule)
 	}
-
-	return fmt.Errorf("unsupported policy: %s for rule: %v", rule.Policy, rule)
 }
 
 func (e *Clerk) addIngressSecurityGroupRule(rule SecurityGroupRule) error {
@@ -100,7 +99,9 @@ func (e *Clerk) addIngressSecurityGroupRule(rule SecurityGroupRule) error {
 		SourceCidrIp: &rule.CidrIp,
 		Description:  &rule.Description,
 		Priority:     tea.String("1"),
+		Policy:       &rule.Policy,
 	}
+
 	runtime := &util.RuntimeOptions{}
 	_, err := e.ecsClient.AuthorizeSecurityGroupWithOptions(authorizeSecurityGroupRequest, runtime)
 	if err != nil {
@@ -119,6 +120,7 @@ func (e *Clerk) addEgressSecurityGroupRule(rule SecurityGroupRule) error {
 		DestCidrIp:  &rule.CidrIp,
 		Description: &rule.Description,
 		Priority:    tea.String("1"),
+		Policy:      &rule.Policy,
 	}
 
 	runtime := &util.RuntimeOptions{}
@@ -130,15 +132,14 @@ func (e *Clerk) addEgressSecurityGroupRule(rule SecurityGroupRule) error {
 }
 
 func (e *Clerk) RemoveSecurityGroupRule(rule SecurityGroupRule) error {
-	if rule.Policy != PolicyAccept {
+	switch rule.Direction {
+	case DirectionIngress:
 		return e.removeIngressSecurityGroupRule(rule)
-	}
-
-	if rule.Policy == PolicyAccept {
+	case DirectionEgress:
 		return e.removeEgressSecurityGroupRule(rule)
+	default:
+		return fmt.Errorf("unsupported direction: %s for rule: %v", rule.Direction, rule)
 	}
-
-	return fmt.Errorf("unsupported policy: %s for rule: %v", rule.Policy, rule)
 }
 
 func (e *Clerk) removeIngressSecurityGroupRule(rule SecurityGroupRule) error {
@@ -173,15 +174,14 @@ func (e *Clerk) removeEgressSecurityGroupRule(rule SecurityGroupRule) error {
 }
 
 func (e *Clerk) ModifySecurityGroupRule(ruleId string, newRule SecurityGroupRule) error {
-	if newRule.Policy != PolicyAccept {
+	switch newRule.Direction {
+	case DirectionIngress:
 		return e.modifyIngressSecurityRule(ruleId, newRule)
-	}
-
-	if newRule.Policy == PolicyAccept {
+	case DirectionEgress:
 		return e.modifyEgressSecurityRule(ruleId, newRule)
+	default:
+		return fmt.Errorf("unsupported direction: %s for rule: %v", newRule.Direction, newRule)
 	}
-
-	return fmt.Errorf("unsupported policy: %s for rule: %v", newRule.Policy, newRule)
 }
 
 func (e *Clerk) modifyIngressSecurityRule(ruleId string, newRule SecurityGroupRule) error {
@@ -194,6 +194,7 @@ func (e *Clerk) modifyIngressSecurityRule(ruleId string, newRule SecurityGroupRu
 		PortRange:           &newRule.PortRange,
 		Description:         &newRule.Description,
 		Priority:            &newRule.Priority,
+		Policy:              &newRule.Policy,
 	}
 
 	runtime := &util.RuntimeOptions{}
@@ -215,6 +216,7 @@ func (e *Clerk) modifyEgressSecurityRule(ruleId string, newRule SecurityGroupRul
 		PortRange:           &newRule.PortRange,
 		Description:         &newRule.Description,
 		Priority:            &newRule.Priority,
+		Policy:              &newRule.Policy,
 	}
 
 	runtime := &util.RuntimeOptions{}

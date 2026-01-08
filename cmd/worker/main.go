@@ -11,7 +11,7 @@ var (
 )
 
 func main() {
-	flag.StringVar(&configFile, "config", "", "Path to configuration file")
+	flag.StringVar(&configFile, "config", ".env", "Path to configuration file")
 	flag.Parse()
 
 	if err := conf.LoadFile(configFile); err != nil {

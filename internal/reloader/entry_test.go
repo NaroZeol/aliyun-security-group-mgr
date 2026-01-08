@@ -14,7 +14,7 @@ var testGroup = []struct {
 	{
 		line: "accept ingress tcp 22/22 from 0.0.0.0/0 priority 100 until 2024-12-31T23:59:59+08:00 # SSH access",
 		entry: Entry{
-			SecurityGroupRule: ecs.SecurityGroupRule{
+			SecurityGroup: ecs.SecurityGroupRule{
 				Policy:      ecs.PolicyAccept,
 				Direction:   "ingress",
 				IpProtocol:  "TCP",
@@ -29,7 +29,7 @@ var testGroup = []struct {
 	{
 		line: "drop egress udp 53/53 to 0.0.0.0/0 priority 200 until 2024-12-31T23:59:59+08:00",
 		entry: Entry{
-			SecurityGroupRule: ecs.SecurityGroupRule{
+			SecurityGroup: ecs.SecurityGroupRule{
 				Policy:      ecs.PolicyDrop,
 				Direction:   "egress",
 				IpProtocol:  "UDP",
@@ -44,7 +44,7 @@ var testGroup = []struct {
 	{
 		line: "accept ingress tcp 80/80 from 1.2.3.4/10 priority 300 until 2024-12-31T23:59:59+08:00 # TEST access",
 		entry: Entry{
-			SecurityGroupRule: ecs.SecurityGroupRule{
+			SecurityGroup: ecs.SecurityGroupRule{
 				Policy:      ecs.PolicyAccept,
 				Direction:   "ingress",
 				IpProtocol:  "TCP",
@@ -66,14 +66,14 @@ func TestDecodeEntry(t *testing.T) {
 			continue
 		}
 
-		if entry.Policy != test.entry.Policy ||
-			entry.Direction != test.entry.Direction ||
-			entry.IpProtocol != test.entry.IpProtocol ||
-			entry.PortRange != test.entry.PortRange ||
-			entry.CidrIp != test.entry.CidrIp ||
-			entry.Priority != test.entry.Priority ||
+		if entry.SecurityGroup.Policy != test.entry.SecurityGroup.Policy ||
+			entry.SecurityGroup.Direction != test.entry.SecurityGroup.Direction ||
+			entry.SecurityGroup.IpProtocol != test.entry.SecurityGroup.IpProtocol ||
+			entry.SecurityGroup.PortRange != test.entry.SecurityGroup.PortRange ||
+			entry.SecurityGroup.CidrIp != test.entry.SecurityGroup.CidrIp ||
+			entry.SecurityGroup.Priority != test.entry.SecurityGroup.Priority ||
 			!entry.ExpireAt.Equal(test.entry.ExpireAt) ||
-			entry.Description != test.entry.Description {
+			entry.SecurityGroup.Description != test.entry.SecurityGroup.Description {
 			t.Errorf("DecodeEntry(%q) = %+v; want %+v", test.line, entry, test.entry)
 		}
 	}

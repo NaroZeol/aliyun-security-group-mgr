@@ -12,13 +12,16 @@ type GlobalConfiguration struct {
 	Credential *Credential
 
 	// Watch config
-	Watcher *Watcher
+	Reloader *Reloader
 
 	// ECS Instance Info
 	ECS *ECS
 
 	// Security Group Info
 	SecurityGroup *SecurityGroup `split_words:"true"`
+
+	// Debug
+	Debug *bool `json:"debug,omitempty" split_words:"true"`
 }
 
 type Credential struct {
@@ -27,16 +30,15 @@ type Credential struct {
 	AccessKeySecret *string `json:"access_key_secret,omitempty" split_words:"true"`
 }
 
-type Watcher struct {
-	Enabled  *bool   `json:"enabled,omitempty"`
-	Interval *int64  `json:"interval,omitempty"`
-	Path     *string `json:"path,omitempty"`
+type Reloader struct {
+	Enabled   *bool   `json:"enabled,omitempty"`
+	Interval  *int64  `json:"interval,omitempty"`
+	WatchPath *string `json:"watch_path,omitempty"`
 }
 
 type ECS struct {
-	InstanceId *string `json:"instance_id,omitempty" split_words:"true"`
-	RegionId   *string `json:"region_id,omitempty" split_words:"true"`
-	Endpoint   *string `json:"endpoint,omitempty"` // See: https://api.aliyun.com/product/Ecs
+	RegionId *string `json:"region_id,omitempty" split_words:"true"`
+	Endpoint *string `json:"endpoint,omitempty"` // See: https://api.aliyun.com/product/Ecs
 }
 
 type SecurityGroup struct {
@@ -50,7 +52,7 @@ var (
 func NewConfig() *GlobalConfiguration {
 	return &GlobalConfiguration{
 		Credential:    &Credential{},
-		Watcher:       &Watcher{},
+		Reloader:      &Reloader{},
 		ECS:           &ECS{},
 		SecurityGroup: &SecurityGroup{},
 	}
@@ -74,4 +76,9 @@ func LoadGlobalFromEnv() (config *GlobalConfiguration, err error) {
 	config = NewConfig()
 	err = envconfig.Process(DefaultPrefix, config)
 	return config, err
+}
+
+func UpadateGlobalFromEnv(config *GlobalConfiguration) (err error) {
+	err = envconfig.Process(DefaultPrefix, config)
+	return err
 }
