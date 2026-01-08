@@ -9,8 +9,11 @@ type InnerDescribeSecurityGroupAttributeResponse ecs.DescribeSecurityGroupAttrib
 type Policy string
 
 const (
-	PolicyAccept Policy = "Accept"
-	PolicyDrop   Policy = "Drop"
+	PolicyAccept = "Accept"
+	PolicyDrop   = "Drop"
+
+	DirectionIngress = "ingress"
+	DirectionEgress  = "egress"
 )
 
 type SecurityGroupRule struct {
@@ -19,7 +22,7 @@ type SecurityGroupRule struct {
 	PortRange  string
 	IpProtocol string
 
-	Policy      Policy
+	Policy      string
 	Priority    string
 	Direction   string
 	Description string
@@ -35,7 +38,7 @@ func buildSecurityGroupRules(response ecs.DescribeSecurityGroupAttributeResponse
 	for _, perm := range response.Body.Permissions.Permission {
 		rule := SecurityGroupRule{
 			Id:          *perm.SecurityGroupRuleId,
-			Policy:      Policy(*perm.Policy),
+			Policy:      *perm.Policy,
 			Priority:    *perm.Priority,
 			Description: *perm.Description,
 

@@ -13,14 +13,25 @@ import (
 )
 
 type Entry struct {
-	ecs.SecurityGroupRule
-	ExpireAt time.Time
+	SecurityGroup ecs.SecurityGroupRule
+	ExpireAt      time.Time
+}
+
+func (e *Entry) EqualContent(other Entry) bool {
+	return true &&
+		e.SecurityGroup.CidrIp == other.SecurityGroup.CidrIp &&
+		e.SecurityGroup.PortRange == other.SecurityGroup.PortRange &&
+		e.SecurityGroup.IpProtocol == other.SecurityGroup.IpProtocol &&
+		e.SecurityGroup.Policy == other.SecurityGroup.Policy &&
+		e.SecurityGroup.Priority == other.SecurityGroup.Priority &&
+		e.SecurityGroup.Direction == other.SecurityGroup.Direction &&
+		e.SecurityGroup.Description == other.SecurityGroup.Description
 }
 
 func ReadEntriesFromFile(path string) ([]Entry, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer file.Close()
 
@@ -35,6 +46,9 @@ func ReadEntriesFromFile(path string) ([]Entry, error) {
 	for _, line := range lines {
 		entry, err := DecodeEntry(line)
 		if err != nil {
+			if strings.Contains(err.Error(), "empty line") {
+				continue
+			}
 			return nil, err
 		}
 		entries = append(entries, *entry)
@@ -46,12 +60,16 @@ func ReadEntriesFromFile(path string) ([]Entry, error) {
 func DecodeEntry(line string) (*Entry, error) {
 	comment := utils.ExtractCommentFromLine(line)
 	line = utils.RemoveCommentFromLine(line)
+	if strings.TrimSpace(line) == "" {
+		return nil, fmt.Errorf("empty line")
+	}
+
 	parts := strings.Fields(line)
 	if len(parts) != 10 {
 		return nil, fmt.Errorf("invalid entry line: %s", line)
 	}
 
-	policy := ecs.Policy(strings.Title(parts[0]))
+	policy := strings.Title(parts[0])
 	direction := parts[1]
 	ipProtocol := strings.ToUpper(parts[2])
 	portRange := parts[3]
@@ -65,7 +83,7 @@ func DecodeEntry(line string) (*Entry, error) {
 	}
 
 	entry := &Entry{
-		SecurityGroupRule: ecs.SecurityGroupRule{
+		SecurityGroup: ecs.SecurityGroupRule{
 			Policy:      policy,
 			Direction:   direction,
 			IpProtocol:  ipProtocol,
@@ -101,21 +119,21 @@ func WriteEntriesToFile(path string, entries []Entry) error {
 func EncodeEntry(entry Entry) string {
 	var policy string
 	{
-		runes := []rune(string(entry.Policy))
+		runes := []rune(string(entry.SecurityGroup.Policy))
 		runes[0] = unicode.ToLower(runes[0])
 		policy = string(runes)
 	}
-	var direction string = entry.Direction
-	var ipProtocol string = strings.ToLower(entry.IpProtocol)
-	var portRange string = entry.PortRange
+	var direction string = entry.SecurityGroup.Direction
+	var ipProtocol string = strings.ToLower(entry.SecurityGroup.IpProtocol)
+	var portRange string = entry.SecurityGroup.PortRange
 	var directionWord string
-	if entry.Direction == "ingress" {
+	if entry.SecurityGroup.Direction == "ingress" {
 		directionWord = "from"
 	} else {
 		directionWord = "to"
 	}
-	var cidrIp string = entry.CidrIp
-	var priority string = entry.Priority
+	var cidrIp string = entry.SecurityGroup.CidrIp
+	var priority string = entry.SecurityGroup.Priority
 	var expireAt string = entry.ExpireAt.Format(time.RFC3339)
 
 	str := fmt.Sprintf("%s %s %s %s %s %s priority %s until %s",
@@ -130,8 +148,8 @@ func EncodeEntry(entry Entry) string {
 	)
 
 	str = strings.TrimSpace(str)
-	if entry.Description != "" {
-		str += " # " + entry.Description
+	if entry.SecurityGroup.Description != "" {
+		str += " # " + entry.SecurityGroup.Description
 	}
 
 	return str
