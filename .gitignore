@@ -1,3 +1,6 @@
 SECRET
 .env*
+*.log
 sgmgr_rules.conf
+main
+aliyun-sgmgr

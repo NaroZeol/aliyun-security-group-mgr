@@ -5,6 +5,7 @@ import (
 
 	"log"
 	"os"
+	"time"
 )
 
 func (s *Service) createNewWatchFile() error {
@@ -20,6 +21,10 @@ func (s *Service) createNewWatchFile() error {
 	if err != nil {
 		return err
 	}
+	for i := range currentEntries {
+		currentEntries[i].ExpireAt, _ = time.Parse(time.RFC3339, "2100-01-01T00:00:00Z")
+	}
+
 	err = reloader.WriteEntriesToFile(*s.Config.Reloader.WatchPath, currentEntries)
 	if err != nil {
 		log.Printf("[Service] failed to write current rules to watch file: %v", err)
