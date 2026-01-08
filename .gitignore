@@ -1,3 +1,4 @@
 SECRET
 .env*
 sgmgr_rules.conf
+main
